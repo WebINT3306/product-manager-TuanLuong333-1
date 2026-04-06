@@ -1,117 +1,119 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản lý Sản phẩm</title>
-  <style>
-    body{font-family:Arial;padding:20px}
-    input,button{padding:6px;margin:2px}
-    table{width:100%;border-collapse:collapse;margin-top:15px}
-    th,td{border:1px solid #ccc;padding:8px;text-align:left}
-    th{background:#eee}
-    tbody tr:nth-child(even){background:#f9f9f9}
-    tbody tr:hover{background:#eaf3ff}
-    #th-name{cursor:pointer}
-  </style>
+    <meta charset="UTF-8">
+    <title>Quản lý sản phẩm</title>
 </head>
 <body>
-  <input id="input-name" type="text" placeholder="Ten san pham">
-  <input id="input-category" type="text" placeholder="Danh muc">
-  <input id="input-price" type="number" placeholder="Don gia">
-  <input id="input-quantity" type="number" placeholder="So luong">
-  <button id="btn-add" type="button">Them</button>
 
-  <table id="product-table">
+<h2>Danh sách sản phẩm</h2>
+
+<table id="product-table">
     <thead>
-      <tr>
-        <th>STT</th>
-        <th id="th-name">Ten san pham</th>
-        <th>Danh muc</th>
-        <th>Don gia</th>
-        <th>So luong</th>
-      </tr>
+        <tr>
+            <th>STT</th>
+            <th id="sort-name">Tên sản phẩm ▲▼</th>
+            <th>Danh mục</th>
+            <th>Đơn giá</th>
+            <th>Số lượng</th>
+        </tr>
     </thead>
-    <tbody></tbody>
-  </table>
+    <tbody>
+    </tbody>
+</table>
 
-  <script>
-    var products = [];
-    var loaded = false;
-    var asc = true;
+<h2>Thêm sản phẩm</h2>
 
-    var tbody = document.querySelector("#product-table tbody");
-    var thName = document.getElementById("th-name");
-    var btnAdd = document.getElementById("btn-add");
+<div class="form-group">
+    <input id="input-name" placeholder="Tên sản phẩm">
+    <input id="input-category" placeholder="Danh mục">
+    <input id="input-price" type="number" placeholder="Đơn giá">
+    <input id="input-quantity" type="number" placeholder="Số lượng">
+    <button id="btn-add">Thêm</button>
+</div>
 
-    function renderTable() {
-      var html = "";
-      for (var i = 0; i < products.length; i++) {
-        html += "<tr>" +
-          "<td>" + (i + 1) + "</td>" +
-          "<td>" + products[i].name + "</td>" +
-          "<td>" + (products[i].category || "") + "</td>" +
-          "<td>" + products[i].price + "</td>" +
-          "<td>" + products[i].quantity + "</td>" +
-          "</tr>";
-      }
-      tbody.innerHTML = html;
+<script>
+    let products = [];
+    let isAscending = true;
+
+    const tbody = document.querySelector("#product-table tbody");
+    const sortBtn = document.getElementById("sort-name");
+
+    function renderTable(data) {
+        tbody.innerHTML = "";
+        data.forEach((p, index) => {
+            const row = `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${p.name}</td>
+                    <td>${p.category || ""}</td>
+                    <td>${p.price}</td>
+                    <td>${p.quantity}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
     }
 
-    function loadProducts() {
-      var xhr = new XMLHttpRequest();
-      xhr.onreadystatechange = function() {
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
         if (xhr.readyState === 4 && xhr.status === 200) {
-          var data = JSON.parse(xhr.responseText);
-          products = data.concat(products);
-          loaded = true;
-          renderTable();
+            products = JSON.parse(xhr.responseText);
+            renderTable(products);
         }
-      };
-      xhr.open("GET", "products.json", true);
-      xhr.send();
-    }
-
-    thName.onclick = function() {
-      products.sort(function(a, b) {
-        var x = String(a.name).toLowerCase();
-        var y = String(b.name).toLowerCase();
-        if (x < y) return asc ? -1 : 1;
-        if (x > y) return asc ? 1 : -1;
-        return 0;
-      });
-      thName.innerHTML = "Ten san pham " + (asc ? "▲" : "▼");
-      asc = !asc;
-      renderTable();
     };
+    xhr.open('GET', 'products.json');
+    xhr.send();
 
-    btnAdd.onclick = function() {
-      var name = document.getElementById("input-name").value.trim();
-      var category = document.getElementById("input-category").value.trim();
-      var price = document.getElementById("input-price").value;
-      var quantity = document.getElementById("input-quantity").value;
+    sortBtn.addEventListener("click", function() {
+        products.sort((a, b) => {
+            if (a.name.toLowerCase() < b.name.toLowerCase()) return isAscending ? -1 : 1;
+            if (a.name.toLowerCase() > b.name.toLowerCase()) return isAscending ? 1 : -1;
+            return 0;
+        });
 
-      if (name === "" || price === "" || quantity === "") return;
+        isAscending = !isAscending;
+        sortBtn.innerText = "Tên sản phẩm " + (isAscending ? "▲" : "▼");
 
-      products.push({
-        id: products.length + 1,
-        name: name,
-        category: category,
-        price: price,
-        quantity: quantity
-      });
+        renderTable(products);
+    });
 
-      renderTable();
+    document.getElementById("btn-add").addEventListener("click", function() {
+        const name = document.getElementById("input-name").value.trim();
+        const category = document.getElementById("input-category").value.trim();
+        const price = Number(document.getElementById("input-price").value);
+        const quantity = Number(document.getElementById("input-quantity").value);
 
-      document.getElementById("input-name").value = "";
-      document.getElementById("input-category").value = "";
-      document.getElementById("input-price").value = "";
-      document.getElementById("input-quantity").value = "";
-    };
+        if (name.length < 3) {
+            alert("Tên sản phẩm phải >= 3 ký tự");
+            return;
+        }
+        if (price <= 0) {
+            alert("Đơn giá phải > 0");
+            return;
+        }
+        if (!Number.isInteger(quantity) || quantity < 1) {
+            alert("Số lượng phải >= 1");
+            return;
+        }
 
-    window.onload = function() {
-      loadProducts();
-    };
-  </script>
+        const newProduct = {
+            id: products.length + 1,
+            name,
+            category,
+            price,
+            quantity
+        };
+
+        products.push(newProduct);
+        renderTable(products);
+
+        document.getElementById("input-name").value = "";
+        document.getElementById("input-category").value = "";
+        document.getElementById("input-price").value = "";
+        document.getElementById("input-quantity").value = "";
+    });
+</script>
+
 </body>
 </html>
