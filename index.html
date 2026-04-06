@@ -5,30 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Sản phẩm</title>
   <style>
-    body{font-family:Arial,sans-serif;padding:20px}
-    table{width:100%;border-collapse:collapse;margin-top:20px}
+    body{font-family:Arial;padding:20px}
+    table{width:100%;border-collapse:collapse;margin-top:15px}
     th,td{border:1px solid #ccc;padding:8px;text-align:left}
     th{background:#eee}
     tbody tr:nth-child(even){background:#f9f9f9}
     tbody tr:hover{background:#eaf3ff}
-    #sortable-name{cursor:pointer}
-    input,button{margin:4px 0;padding:6px}
+    #name-th{cursor:pointer}
+    input,button{padding:6px;margin:2px}
   </style>
 </head>
 <body>
-  <h2>Quản lý sản phẩm</h2>
-
   <input id="input-name" placeholder="Tên sản phẩm">
   <input id="input-category" placeholder="Danh mục">
   <input id="input-price" type="number" placeholder="Đơn giá">
   <input id="input-quantity" type="number" placeholder="Số lượng">
-  <button id="btn-add">Thêm</button>
+  <button id="btn-add" type="button">Thêm</button>
 
   <table id="product-table">
     <thead>
       <tr>
         <th>STT</th>
-        <th id="sortable-name">Tên sản phẩm</th>
+        <th id="name-th">Tên sản phẩm</th>
         <th>Danh mục</th>
         <th>Đơn giá</th>
         <th>Số lượng</th>
@@ -38,13 +36,16 @@
   </table>
 
   <script>
-    let products = [], asc = true;
+    let products = [];
+    let asc = true;
+
     const tbody = document.querySelector("#product-table tbody");
-    const thName = document.getElementById("sortable-name");
+    const nameTh = document.getElementById("name-th");
 
     function render() {
       tbody.innerHTML = "";
-      products.forEach((p, i) => {
+      for (let i = 0; i < products.length; i++) {
+        const p = products[i];
         tbody.innerHTML += `
           <tr>
             <td>${i + 1}</td>
@@ -52,8 +53,9 @@
             <td>${p.category || ""}</td>
             <td>${p.price}</td>
             <td>${p.quantity}</td>
-          </tr>`;
-      });
+          </tr>
+        `;
+      }
     }
 
     const xhr = new XMLHttpRequest();
@@ -63,14 +65,18 @@
         render();
       }
     };
-    xhr.open("GET", "products.json");
+    xhr.open("GET", "products.json", true);
     xhr.send();
 
-    thName.onclick = function () {
-      products.sort((a, b) =>
-        asc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
-      );
-      thName.innerHTML = "Tên sản phẩm " + (asc ? "▲" : "▼");
+    nameTh.onclick = function () {
+      products.sort(function(a, b) {
+        const x = (a.name || "").toLowerCase();
+        const y = (b.name || "").toLowerCase();
+        if (x < y) return asc ? -1 : 1;
+        if (x > y) return asc ? 1 : -1;
+        return 0;
+      });
+      nameTh.innerHTML = "Tên sản phẩm " + (asc ? "▲" : "▼");
       asc = !asc;
       render();
     };
@@ -78,12 +84,19 @@
     document.getElementById("btn-add").onclick = function () {
       const name = document.getElementById("input-name").value.trim();
       const category = document.getElementById("input-category").value.trim();
-      const price = +document.getElementById("input-price").value;
-      const quantity = +document.getElementById("input-quantity").value;
+      const price = document.getElementById("input-price").value;
+      const quantity = document.getElementById("input-quantity").value;
 
-      if (name.length < 3 || price <= 0 || !Number.isInteger(quantity) || quantity < 1) return;
+      if (name === "" || price === "" || quantity === "") return;
 
-      products.push({ id: products.length + 1, name, category, price, quantity });
+      products.push({
+        id: products.length + 1,
+        name: name,
+        category: category,
+        price: price,
+        quantity: quantity
+      });
+
       render();
 
       document.getElementById("input-name").value = "";
